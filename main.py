@@ -11,5 +11,4 @@ async def github_webhook(request: Request):
     data = await request.json()
     print("Webhook received:")
     print(data)
-    return {"status": "ok"}
     return {"message": "Server Running v2"}
