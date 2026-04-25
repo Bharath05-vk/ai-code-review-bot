@@ -33,4 +33,4 @@ async def github_webhook(request: Request):
 
     print("================================\n")
 
-    return {"status": "received"}
+    return {"message": "Webhook Trigger FINAL v2"}
