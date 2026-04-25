@@ -1,20 +1,15 @@
-"""AI Code Review Bot - entrypoint
+from fastapi import FastAPI, Request
 
-This is a minimal starter script. Replace with your application's logic.
-"""
+app = FastAPI()
 
-import argparse
+@app.get("/")
+def home():
+    return {"message": "Server Running"}
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Code Review Bot")
-    parser.add_argument("--version", action="store_true", help="show version")
-    args = parser.parse_args()
-    if args.version:
-        print("AI-CODE-REVIEW-BOT version 0.1")
-    else:
-        print("AI Code Review Bot running. Replace main() with real logic.")
-
-
-if __name__ == "__main__":
-    main()
+@app.post("/webhook")
+async def github_webhook(request: Request):
+    data = await request.json()
+    print("Webhook received:")
+    print(data)
+    return {"status": "ok"}
+    return {"message": "Server Running v2"}
