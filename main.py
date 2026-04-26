@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request
 import requests
+import os
+from openai import OpenAI
 
 app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"message": "Server Running FINAL"}
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @app.post("/webhook")
 async def github_webhook(request: Request):
@@ -16,33 +16,52 @@ async def github_webhook(request: Request):
         return {"status": "ignored"}
 
     data = await request.json()
-
     action = data.get("action")
 
-    # Only handle PR opened or updated
     if action not in ["opened", "synchronize"]:
         return {"status": "ignored action"}
 
-    pull_request = data.get("pull_request", {})
-    pr_number = pull_request.get("number")
-
-    repo = data.get("repository", {}).get("full_name")
+    pr_number = data["pull_request"]["number"]
+    repo = data["repository"]["full_name"]
 
     print(f"\nFetching files for PR #{pr_number} in {repo}")
 
-    # 🔥 GitHub API call
+    # 🔹 Get changed files
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/files"
-
     response = requests.get(url)
     files = response.json()
 
-    print("\nChanged Files:")
-
     for file in files:
-        print(f"File: {file['filename']}")
-        print(f"Changes: +{file['additions']} -{file['deletions']}")
-        print("Patch (code diff):")
-        print(file.get("patch", "No patch available"))
-        print("-" * 40)
+        filename = file["filename"]
+        patch = file.get("patch")
 
-    return {"status": "processed"}
+        if not patch:
+            continue
+
+        print(f"\nAnalyzing file: {filename}")
+
+        # 🔥 Send to AI
+        prompt = f"""
+        You are a senior code reviewer.
+
+        Review the following code changes:
+        {patch}
+
+        Give:
+        - Bugs (if any)
+        - Improvements
+        - Best practices
+        """
+
+        ai_response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        review = ai_response.choices[0].message.content
+
+        print("\nAI Review:")
+        print(review)
+        print("=" * 50)
+
+    return {"status": "reviewed"}
