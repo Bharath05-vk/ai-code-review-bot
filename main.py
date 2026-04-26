@@ -64,4 +64,4 @@ async def github_webhook(request: Request):
         print(review)
         print("=" * 50)
 
-    return {"status": "reviewed"}
+    return {"message": "AI Review Trigger v1"}
